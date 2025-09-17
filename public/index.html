@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محاسبه شهریه تقریبی دانشجویان</title>
+
+    <script src="https://unpkg.com/slim-select@latest/dist/slimselect.min.js"></script>
+    <link href="https://unpkg.com/slim-select@latest/dist/slimselect.min.css" rel="stylesheet"></link>
+
     <style>
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Tahoma',sans-serif;background-color:#f4f7f9;color:#333;margin:0;padding:20px;display:flex;justify-content:center;align-items:center;min-height:100vh; padding-bottom: 40vh;}
         .form-container{width:100%;max-width:700px;background:#fff;padding:25px 30px;border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,.1)}
@@ -17,7 +21,6 @@
         select,input[type=number]{width:100%;padding:10px;border:1px solid #ccc;border-radius:5px;font-size:16px;box-sizing:border-box}
         select:disabled{background-color:#f2f2f2;cursor:not-allowed}
         .result-box{margin-top:20px;padding:15px;background-color:#eaf6ff;border:1px solid #bce0fd;border-radius:5px;font-weight:700;text-align:center;font-size:1.1em}
-        #nursing-notice{color:#e74c3c;font-style:italic}
         table{width:100%;margin-top:20px;border-collapse:collapse}
         th,td{padding:12px;text-align:center;border:1px solid #ddd}
         th{background-color:#f2f2f2}
@@ -43,11 +46,11 @@
         </div>
         <div class="form-row">
             <label for="field-group-select-a">گروه / رشته تحصیلی:</label>
-            <select id="field-group-select-a" disabled size="8"></select>
+            <select id="field-group-select-a"></select>
         </div>
         <div class="form-row">
             <label for="level-select-a">سطح واحد:</label>
-            <select id="level-select-a" disabled></select>
+            <select id="level-select-a"></select>
         </div>
         <div id="result-base-a" class="result-box" style="display: none;"></div>
         <div id="variable-tuition-section-a" style="display: none;">
@@ -80,11 +83,11 @@
         </div>
         <div class="form-row">
             <label for="field-group-select-c">گروه / رشته تحصیلی:</label>
-            <select id="field-group-select-c" disabled size="8"></select>
+            <select id="field-group-select-c"></select>
         </div>
         <div class="form-row">
             <label for="level-select-c">سطح واحد:</label>
-            <select id="level-select-c" disabled></select>
+            <select id="level-select-c"></select>
         </div>
         <div id="result-c" class="result-box" style="display: none;"></div>
     </div>
@@ -93,11 +96,14 @@
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
         let allData = {};
+        let slimSelectInstances = {};
 
-        const formA = { degree: document.getElementById('degree-select-a'), fieldGroup: document.getElementById('field-group-select-a'), level: document.getElementById('level-select-a') };
+        // --- Selectors ---
+        const formA = { degree: document.getElementById('degree-select-a') };
         const formB = { location: document.getElementById('location-select-b'), degree: document.getElementById('degree-select-b'), result: document.getElementById('result-b') };
-        const formC = { degree: document.getElementById('degree-select-c'), fieldGroup: document.getElementById('field-group-select-c'), level: document.getElementById('level-select-c'), result: document.getElementById('result-c') };
+        const formC = { degree: document.getElementById('degree-select-c'), result: document.getElementById('result-c') };
 
+        // --- Helper Functions ---
         const populateSelect = (el, opts) => {
             el.innerHTML = '<option value="">انتخاب کنید...</option>';
             opts.forEach(opt => el.insertAdjacentHTML('beforeend', `<option value="${opt}">${opt}</option>`));
@@ -117,92 +123,136 @@
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(num);
         };
 
-        async function initialize() {
+        // --- Main Setup Function ---
+        async function setupApplication() {
             try {
                 const response = await fetch('/api/data');
                 if (!response.ok) throw new Error('Network response was not ok');
                 allData = await response.json();
                 console.log("Data loaded:", allData);
 
+                // Initialize all the custom dropdowns
+                const slimSettings = {
+                    settings: {
+                        placeholderText: 'انتخاب کنید...',
+                        searchPlaceholder: 'جستجو کنید'
+                    }
+                };
+                slimSelectInstances.formA_fieldGroup = new SlimSelect({ select: '#field-group-select-a', ...slimSettings });
+                slimSelectInstances.formA_level = new SlimSelect({ select: '#level-select-a', ...slimSettings });
+                slimSelectInstances.formC_fieldGroup = new SlimSelect({ select: '#field-group-select-c', ...slimSettings });
+                slimSelectInstances.formC_level = new SlimSelect({ select: '#level-select-c', ...slimSettings });
+
+                // Populate initial dropdowns
                 populateSelect(formA.degree, Object.keys(allData.variable));
                 populateSelect(formB.location, Object.keys(allData.selfGoverning));
                 populateSelect(formC.degree, Object.keys(allData.currency));
+
+                // Attach all event listeners now that everything is created
+                setupEventListeners();
             } catch (error) {
                 console.error('Failed to fetch data:', error);
                 alert('خطا در بارگذاری اطلاعات از سرور.');
             }
         }
 
-        document.querySelectorAll('input[name="tuition-type"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                document.querySelectorAll('.form-section').forEach(form => form.classList.remove('active'));
-                document.getElementById(e.target.value).classList.add('active');
+        function setupEventListeners() {
+            // --- Radio Button Logic ---
+            document.querySelectorAll('input[name="tuition-type"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    document.querySelectorAll('.form-section').forEach(form => form.classList.remove('active'));
+                    document.getElementById(e.target.value).classList.add('active');
+                });
             });
-        });
 
-        formA.degree.addEventListener('change', () => {
-            resetSelect(formA.fieldGroup); resetSelect(formA.level);
-            const selectedDegree = formA.degree.value;
-            if (selectedDegree && allData.variable[selectedDegree] && allData.variable[selectedDegree]['نظری']) {
-                populateSelect(formA.fieldGroup, Object.keys(allData.variable[selectedDegree]['نظری']));
-            }
-        });
-        formA.fieldGroup.addEventListener('change', () => {
-            resetSelect(formA.level);
-            const selectedFieldGroup = formA.fieldGroup.value;
-            if (selectedFieldGroup && allData.base[selectedFieldGroup]) {
-                populateSelect(formA.level, Object.keys(allData.base[selectedFieldGroup]));
-            }
-        });
-        formA.level.addEventListener('change', calculateFormA);
+            // --- FORM A LOGIC ---
+            formA.degree.addEventListener('change', () => {
+                const selectedDegree = formA.degree.value;
+                slimSelectInstances.formA_fieldGroup.disable();
+                slimSelectInstances.formA_fieldGroup.setData([]);
+                slimSelectInstances.formA_level.disable();
+                slimSelectInstances.formA_level.setData([]);
 
-        formB.location.addEventListener('change', () => {
-            resetSelect(formB.degree); formB.result.style.display = 'none';
-            const selectedLocation = formB.location.value;
-            if (selectedLocation) {
-                populateSelect(formB.degree, Object.keys(allData.selfGoverning[selectedLocation]));
-            }
-        });
-        formB.degree.addEventListener('change', () => {
-            const location = formB.location.value, degree = formB.degree.value;
-            if (location && degree) {
-                const amount = allData.selfGoverning[location][degree];
-                formB.result.textContent = `مجموع شهریه سالیانه: ${formatCurrency(amount, 'تومان')}`;
-                formB.result.style.display = 'block';
-            } else {
-                formB.result.style.display = 'none';
-            }
-        });
+                if (selectedDegree && allData.variable[selectedDegree] && allData.variable[selectedDegree]['نظری']) {
+                    const fieldGroups = Object.keys(allData.variable[selectedDegree]['نظری']);
+                    const options = fieldGroups.map(group => ({ text: group, value: group }));
+                    slimSelectInstances.formA_fieldGroup.setData(options);
+                    slimSelectInstances.formA_fieldGroup.enable();
+                }
+            });
+            slimSelectInstances.formA_fieldGroup.onChange = (info) => {
+                const selectedFieldGroup = info.value;
+                slimSelectInstances.formA_level.disable();
+                slimSelectInstances.formA_level.setData([]);
+                if (selectedFieldGroup && allData.base[selectedFieldGroup]) {
+                    const levels = Object.keys(allData.base[selectedFieldGroup]);
+                    const options = levels.map(level => ({ text: level, value: level }));
+                    slimSelectInstances.formA_level.setData(options);
+                    slimSelectInstances.formA_level.enable();
+                }
+            };
+            slimSelectInstances.formA_level.onChange = () => calculateFormA();
 
-        formC.degree.addEventListener('change', () => {
-            resetSelect(formC.fieldGroup); resetSelect(formC.level); formC.result.style.display = 'none';
-            const selectedDegree = formC.degree.value;
-            if (selectedDegree && allData.currency[selectedDegree]) {
-                populateSelect(formC.fieldGroup, Object.keys(allData.currency[selectedDegree]));
-            }
-        });
-        formC.fieldGroup.addEventListener('change', () => {
-            resetSelect(formC.level); formC.result.style.display = 'none';
-            const selectedDegree = formC.degree.value;
-            const selectedFieldGroup = formC.fieldGroup.value;
-            if (selectedDegree && selectedFieldGroup && allData.currency[selectedDegree][selectedFieldGroup]) {
-                populateSelect(formC.level, Object.keys(allData.currency[selectedDegree][selectedFieldGroup]));
-            }
-        });
-        formC.level.addEventListener('change', () => {
-            const degree = formC.degree.value, fieldGroup = formC.fieldGroup.value, level = formC.level.value;
-            if (degree && fieldGroup && level) {
-                const amount = allData.currency[degree][fieldGroup][level];
-                formC.result.textContent = `شهریه سالیانه: ${formatCurrency(amount, 'USD')}`;
-                formC.result.style.display = 'block';
-            } else {
-                formC.result.style.display = 'none';
-            }
-        });
+            // --- FORM B LOGIC ---
+            formB.location.addEventListener('change', () => {
+                resetSelect(formB.degree); formB.result.style.display = 'none';
+                const selectedLocation = formB.location.value;
+                if (selectedLocation) {
+                    populateSelect(formB.degree, Object.keys(allData.selfGoverning[selectedLocation]));
+                }
+            });
+            formB.degree.addEventListener('change', () => {
+                const location = formB.location.value, degree = formB.degree.value;
+                if (location && degree) {
+                    const amount = allData.selfGoverning[location][degree];
+                    formB.result.textContent = `مجموع شهریه سالیانه: ${formatCurrency(amount, 'تومان')}`;
+                    formB.result.style.display = 'block';
+                } else {
+                    formB.result.style.display = 'none';
+                }
+            });
+
+            // --- FORM C LOGIC ---
+            formC.degree.addEventListener('change', () => {
+                const selectedDegree = formC.degree.value;
+                slimSelectInstances.formC_fieldGroup.disable();
+                slimSelectInstances.formC_fieldGroup.setData([]);
+                slimSelectInstances.formC_level.disable();
+                slimSelectInstances.formC_level.setData([]);
+                if (selectedDegree && allData.currency[selectedDegree]) {
+                    const fieldGroups = Object.keys(allData.currency[selectedDegree]);
+                    const options = fieldGroups.map(group => ({ text: group, value: group }));
+                    slimSelectInstances.formC_fieldGroup.setData(options);
+                    slimSelectInstances.formC_fieldGroup.enable();
+                }
+            });
+            slimSelectInstances.formC_fieldGroup.onChange = (info) => {
+                const selectedDegree = formC.degree.value;
+                const selectedFieldGroup = info.value;
+                slimSelectInstances.formC_level.disable();
+                slimSelectInstances.formC_level.setData([]);
+                if (selectedDegree && selectedFieldGroup && allData.currency[selectedDegree][selectedFieldGroup]) {
+                    const levels = Object.keys(allData.currency[selectedDegree][selectedFieldGroup]);
+                    const options = levels.map(level => ({ text: level, value: level }));
+                    slimSelectInstances.formC_level.setData(options);
+                    slimSelectInstances.formC_level.enable();
+                }
+            };
+            slimSelectInstances.formC_level.onChange = () => {
+                const degree = formC.degree.value, fieldGroup = slimSelectInstances.formC_fieldGroup.getSelected(), level = slimSelectInstances.formC_level.getSelected();
+                if (degree && fieldGroup && level) {
+                    const amount = allData.currency[degree][fieldGroup][level];
+                    formC.result.textContent = `شهریه سالیانه: ${formatCurrency(amount, 'USD')}`;
+                    formC.result.style.display = 'block';
+                } else {
+                    formC.result.style.display = 'none';
+                }
+            };
+        }
 
         function calculateFormA() {
             ['result-base-a', 'result-variable-a', 'result-total-a', 'nursing-notice-a', 'variable-tuition-section-a'].forEach(id => document.getElementById(id).style.display = 'none');
-            const degree = formA.degree.value, fieldGroup = formA.fieldGroup.value, level = formA.level.value;
+            const degree = formA.degree.value, fieldGroup = slimSelectInstances.formA_fieldGroup.getSelected(), level = slimSelectInstances.formA_level.getSelected();
             if (!degree || !fieldGroup || !level) return;
             const baseAmount = allData.base[fieldGroup]?.[level];
             document.getElementById('result-base-a').textContent = `شهریه ثابت: ${formatCurrency(baseAmount, 'تومان')}`;
@@ -228,7 +278,7 @@
             calculateFormATotals();
         }
         function calculateFormATotals() {
-            const degree = formA.degree.value, fieldGroup = formA.fieldGroup.value, level = formA.level.value;
+            const degree = formA.degree.value, fieldGroup = slimSelectInstances.formA_fieldGroup.getSelected(), level = slimSelectInstances.formA_level.getSelected();
             let variableTotal = 0;
             document.querySelectorAll('.variable-unit-input-a').forEach(input => {
                 const count = parseInt(input.value) || 0;
@@ -244,7 +294,8 @@
             document.getElementById('result-total-a').style.display = 'block';
         }
 
-        initialize();
+        // --- Start the Application ---
+        setupApplication();
     });
 </script>
 </body>
