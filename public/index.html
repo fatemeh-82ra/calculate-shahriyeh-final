@@ -5,42 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محاسبه شهریه تقریبی دانشجویان</title>
     <style>
-        body{
-            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Tahoma',sans-serif;
-            background-color:#f4f7f9;
-            color:#333;
-            margin:0;
-            padding:20px;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            min-height:100vh;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Tahoma', sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             padding-bottom: 40vh; /* This guarantees space for the dropdown to open */
         }
-        .form-container{width:100%;max-width:700px;background:#fff;padding:25px 30px;border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,.1)}
-        h2{text-align:center;color:#2c3e50;margin-bottom:25px}
-        .radio-group{display:flex;justify-content:center;gap:15px;margin-bottom:30px;border-bottom:1px solid #e0e0e0;padding-bottom:20px}
-        .radio-group label{cursor:pointer;padding:10px 15px;border-radius:5px;transition:all .3s ease}
-        .radio-group input[type="radio"]{display:none}
-        .radio-group input[type="radio"]:checked+label{background-color:#3498db;color:#fff;font-weight:700}
-        .form-section{display:none}.form-section.active{display:block}
-        .form-row{margin-bottom:15px}.form-row label{display:block;margin-bottom:5px;font-weight:500}
-
-        select,input[type=number]{
-            width:100%;
-            padding:10px;
-            border:1px solid #ccc;
-            border-radius:5px;
-            font-size:16px;
-            box-sizing:border-box;
-
+        .form-container {
+            width: 100%;
+            max-width: 700px;
+            background: #fff;
+            padding: 25px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,.1);
         }
-
-        select:disabled{background-color:#f2f2f2;cursor:not-allowed}
-        .result-box{margin-top:20px;padding:15px;background-color:#eaf6ff;border:1px solid #bce0fd;border-radius:5px;font-weight:700;text-align:center;font-size:1.1em}
-        table{width:100%;margin-top:20px;border-collapse:collapse}
-        th,td{padding:12px;text-align:center;border:1px solid #ddd}
-        th{background-color:#f2f2f2}
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+        }
+        .radio-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 20px;
+        }
+        .radio-group label {
+            cursor: pointer;
+            padding: 10px 15px;
+            border-radius: 5px;
+            transition: all .3s ease;
+        }
+        .radio-group input[type="radio"] {
+            display: none;
+        }
+        .radio-group input[type="radio"]:checked+label {
+            background-color: #3498db;
+            color: #fff;
+            font-weight: 700;
+        }
+        .form-section {
+            display: none;
+        }
+        .form-section.active {
+            display: block;
+        }
+        .form-row {
+            margin-bottom: 15px;
+        }
+        .form-row label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        select, input[type=number] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        select:disabled {
+            background-color: #f2f2f2;
+            cursor: not-allowed;
+        }
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #eaf6ff;
+            border: 1px solid #bce0fd;
+            border-radius: 5px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
     </style>
 </head>
 <body>
@@ -118,14 +181,71 @@
         const formB = { location: document.getElementById('location-select-b'), degree: document.getElementById('degree-select-b'), result: document.getElementById('result-b') };
         const formC = { degree: document.getElementById('degree-select-c'), fieldGroup: document.getElementById('field-group-select-c'), level: document.getElementById('level-select-c'), result: document.getElementById('result-c') };
 
+        // Function to dynamically adjust select width based on longest option
+        function adjustSelectWidth(selectElement) {
+            // Create a temporary element to measure text width
+            const temp = document.createElement('span');
+            temp.style.visibility = 'hidden';
+            temp.style.position = 'absolute';
+            temp.style.whiteSpace = 'nowrap';
+            temp.style.fontSize = window.getComputedStyle(selectElement).fontSize;
+            temp.style.fontFamily = window.getComputedStyle(selectElement).fontFamily;
+            document.body.appendChild(temp);
+
+            let maxWidth = 0;
+            Array.from(selectElement.options).forEach(option => {
+                temp.textContent = option.textContent;
+                const width = temp.offsetWidth;
+                if (width > maxWidth) maxWidth = width;
+            });
+
+            // Add padding (e.g., 30px for dropdown arrow and padding)
+            maxWidth += 30;
+
+            // Store original width
+            const originalWidth = selectElement.style.width || '100%';
+
+            // Adjust width and styles on focus
+            selectElement.addEventListener('focus', () => {
+                selectElement.style.width = `${maxWidth}px`;
+                selectElement.style.whiteSpace = 'normal';
+                selectElement.style.overflow = 'visible';
+                selectElement.style.textOverflow = 'clip';
+            });
+
+            // Restore original width and styles on blur
+            selectElement.addEventListener('blur', () => {
+                selectElement.style.width = originalWidth;
+                selectElement.style.whiteSpace = 'nowrap';
+                selectElement.style.overflow = 'hidden';
+                selectElement.style.textOverflow = 'ellipsis';
+            });
+
+            document.body.removeChild(temp);
+        }
+
+        // Apply to field group selects and re-run on change
+        [formA.fieldGroup, formC.fieldGroup].forEach(select => {
+            adjustSelectWidth(select);
+            select.addEventListener('change', () => adjustSelectWidth(select));
+        });
+
         const populateSelect = (el, opts) => {
             el.innerHTML = '<option value="">انتخاب کنید...</option>';
             opts.forEach(opt => el.insertAdjacentHTML('beforeend', `<option value="${opt}">${opt}</option>`));
             el.disabled = false;
+            // Re-apply width adjustment after populating options
+            if (el === formA.fieldGroup || el === formC.fieldGroup) {
+                adjustSelectWidth(el);
+            }
         };
         const resetSelect = (el) => {
             el.innerHTML = '<option value="">انتخاب کنید...</option>';
             el.disabled = true;
+            // Re-apply width adjustment after resetting
+            if (el === formA.fieldGroup || el === formC.fieldGroup) {
+                adjustSelectWidth(el);
+            }
         };
         const formatCurrency = (numStr, currency = 'تومان') => {
             const num = parseFloat(String(numStr).replace(/,/g, ''));
