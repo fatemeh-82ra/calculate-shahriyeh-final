@@ -71,13 +71,26 @@ function parseCurrencySheet_3D(sheet) {
 
 function parseSelfGoverningSheet(sheet) {
     const data = xlsx.utils.sheet_to_json(sheet);
-    const result = {};
+    const result = {
+        'تهران': {},
+        'خارج از تهران': {}
+    };
+
+    const headers = Object.keys(data[0] || {});
+    const degreeHeader = headers[0];
+    const tehranHeader = headers.find(h => h.includes('تهران'));
+    const otherHeader = headers.find(h => h.includes('خارج از استان تهران'));
+
     data.forEach(row => {
-        const location = normalizeText(row['محل واحد']);
-        const degree = normalizeText(row['مقطع تحصیلی']);
-        const amount = row['مبلغ'];
-        if (!result[location]) result[location] = {};
-        result[location][degree] = amount;
+        const degree = normalizeText(row[degreeHeader]);
+        if (!degree) return;
+
+        if (tehranHeader && row[tehranHeader] !== undefined) {
+            result['تهران'][degree] = row[tehranHeader];
+        }
+        if (otherHeader && row[otherHeader] !== undefined) {
+            result['خارج از تهران'][degree] = row[otherHeader];
+        }
     });
     return result;
 }
@@ -85,7 +98,6 @@ function parseSelfGoverningSheet(sheet) {
 // --- Main API Route ---
 app.get('/api/data', (req, res) => {
     try {
-        // Path to the data folder, which is one level above the 'api' directory
         const dataPath = path.join(__dirname, '../data');
         const allData = { base: {}, variable: {}, currency: {}, selfGoverning: {} };
         const fileExists = (fileName) => fs.existsSync(path.join(dataPath, fileName));
