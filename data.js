@@ -98,7 +98,7 @@ function parseSelfGoverningSheet(sheet) {
 // --- Main API Route ---
 app.get('/api/data', (req, res) => {
     try {
-        const dataPath = path.join(__dirname, '../data');
+        const dataPath = path.join(__dirname);
         const allData = { base: {}, variable: {}, currency: {}, selfGoverning: {} };
         const fileExists = (fileName) => fs.existsSync(path.join(dataPath, fileName));
 
