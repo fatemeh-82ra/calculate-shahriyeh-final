@@ -1,12 +1,15 @@
 {
-  "name": "universal-tuition-app",
+  "name": "tuition-calculator",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "node build-data.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
     "xlsx": "^0.18.5"
   }
 }
