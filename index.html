@@ -15,6 +15,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            padding-bottom: 40vh; /* This guarantees space for the dropdown to open */
         }
         .form-container {
             width: 100%;
@@ -23,7 +24,6 @@
             padding: 25px 30px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,.1);
-            margin-bottom: 20vh;
         }
         h2 {
             text-align: center;
@@ -73,6 +73,9 @@
             border-radius: 5px;
             font-size: 16px;
             box-sizing: border-box;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         select:disabled {
             background-color: #f2f2f2;
@@ -140,31 +143,43 @@
 
     <div id="form-b" class="form-section">
         <h3>شهریه واحدهای خودگردان</h3>
-        <p>این بخش برای نمایش نیاز به پیاده‌سازی مشابه بخش اول دارد.</p>
+        <div class="form-row">
+            <label for="location-select-b">محل واحد:</label>
+            <select id="location-select-b"></select>
+        </div>
+        <div class="form-row">
+            <label for="degree-select-b">مقطع تحصیلی:</label>
+            <select id="degree-select-b" disabled></select>
+        </div>
+        <div id="result-b" class="result-box" style="display: none;"></div>
     </div>
 
     <div id="form-c" class="form-section">
         <h3>شهریه ارزی</h3>
-        <p>این بخش برای نمایش نیاز به پیاده‌سازی مشابه بخش اول دارد.</p>
+        <div class="form-row">
+            <label for="degree-select-c">مقطع تحصیلی:</label>
+            <select id="degree-select-c"></select>
+        </div>
+        <div class="form-row">
+            <label for="field-group-select-c">گروه / رشته تحصیلی:</label>
+            <select id="field-group-select-c" disabled></select>
+        </div>
+        <div class="form-row">
+            <label for="level-select-c">سطح واحد:</label>
+            <select id="level-select-c" disabled></select>
+        </div>
+        <div id="result-c" class="result-box" style="display: none;"></div>
     </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Form A Elements ---
-        const degreeSelect = document.getElementById('degree-select-a');
-        const fieldGroupSelect = document.getElementById('field-group-select-a');
-        const levelSelect = document.getElementById('level-select-a');
-        const variableTbody = document.getElementById('variable-units-tbody-a');
-        const variableSection = document.getElementById('variable-tuition-section-a');
-        const resultBase = document.getElementById('result-base-a');
-        const resultVariable = document.getElementById('result-variable-a');
-        const resultTotal = document.getElementById('result-total-a');
-
-        // --- Helper Functions ---
+        // --- General Helper Functions ---
         const populateSelect = (selectEl, options, prompt = "انتخاب کنید...") => {
             selectEl.innerHTML = `<option value="">${prompt}</option>`;
-            options.forEach(opt => selectEl.insertAdjacentHTML('beforeend', `<option value="${opt}">${opt}</option>`));
+            if (Array.isArray(options)) {
+                options.forEach(opt => selectEl.insertAdjacentHTML('beforeend', `<option value="${opt}">${opt}</option>`));
+            }
             selectEl.disabled = false;
         };
 
@@ -173,131 +188,194 @@
             selectEl.disabled = true;
         };
 
-        const hideResults = () => {
-            variableSection.style.display = 'none';
-            resultBase.style.display = 'none';
-            resultVariable.style.display = 'none';
-            resultTotal.style.display = 'none';
-            variableTbody.innerHTML = '';
+        // --- Form A: University Units ---
+        const formA = {
+            degree: document.getElementById('degree-select-a'),
+            fieldGroup: document.getElementById('field-group-select-a'),
+            level: document.getElementById('level-select-a'),
+            variableTbody: document.getElementById('variable-units-tbody-a'),
+            variableSection: document.getElementById('variable-tuition-section-a'),
+            resultBase: document.getElementById('result-base-a'),
+            resultVariable: document.getElementById('result-variable-a'),
+            resultTotal: document.getElementById('result-total-a'),
         };
 
-        // --- Data Fetching and UI Logic ---
+        const hideFormAResults = () => {
+            formA.variableSection.style.display = 'none';
+            formA.resultBase.style.display = 'none';
+            formA.resultVariable.style.display = 'none';
+            formA.resultTotal.style.display = 'none';
+            formA.variableTbody.innerHTML = '';
+        };
 
-        // 1. Initialize the first dropdown on page load
-        async function initializeDegrees() {
+        async function initializeFormA() {
             try {
                 const response = await fetch('/api/options/degrees');
-                if (!response.ok) throw new Error('Network response was not ok');
-                const degrees = await response.json();
-                populateSelect(degreeSelect, degrees);
-            } catch (error) {
-                console.error('Failed to load degrees:', error);
-                alert('خطا در بارگذاری اطلاعات اولیه از سرور.');
-            }
+                populateSelect(formA.degree, await response.json());
+            } catch (e) { console.error("Form A Init Error:", e); }
         }
 
-        // 2. When a degree is selected, fetch its field groups
-        degreeSelect.addEventListener('change', async () => {
-            resetSelect(fieldGroupSelect);
-            resetSelect(levelSelect);
-            hideResults();
-            const selectedDegree = degreeSelect.value;
-            if (selectedDegree) {
-                try {
-                    const response = await fetch(`/api/options/field-groups?degree=${encodeURIComponent(selectedDegree)}`);
-                    const fieldGroups = await response.json();
-                    populateSelect(fieldGroupSelect, fieldGroups);
-                } catch (error) {
-                    console.error('Failed to load field groups:', error);
-                }
+        formA.degree.addEventListener('change', async () => {
+            resetSelect(formA.fieldGroup);
+            resetSelect(formA.level);
+            hideFormAResults();
+            if (formA.degree.value) {
+                const response = await fetch(`/api/options/field-groups?degree=${encodeURIComponent(formA.degree.value)}`);
+                populateSelect(formA.fieldGroup, await response.json());
             }
         });
 
-        // 3. When a field group is selected, fetch its levels
-        fieldGroupSelect.addEventListener('change', async () => {
-            resetSelect(levelSelect);
-            hideResults();
-            const selectedFieldGroup = fieldGroupSelect.value;
-            if (selectedFieldGroup) {
-                try {
-                    const response = await fetch(`/api/options/levels?fieldGroup=${encodeURIComponent(selectedFieldGroup)}`);
-                    const levels = await response.json();
-                    populateSelect(levelSelect, levels);
-                } catch (error) {
-                    console.error('Failed to load levels:', error);
-                }
+        formA.fieldGroup.addEventListener('change', async () => {
+            resetSelect(formA.level);
+            hideFormAResults();
+            if (formA.fieldGroup.value) {
+                const response = await fetch(`/api/options/levels?fieldGroup=${encodeURIComponent(formA.fieldGroup.value)}`);
+                populateSelect(formA.level, await response.json());
             }
         });
 
-        // 4. When level is selected, show unit inputs and trigger calculation
-        levelSelect.addEventListener('change', () => {
-            // For simplicity, we hardcode the unit types.
-            // For a fully dynamic solution, another API endpoint could provide these.
+        formA.level.addEventListener('change', () => {
             const unitTypes = ['نظری', 'عملی عمومی', 'عملی پایه', 'عملی اصلی', 'عملی تخصصی', 'عملی کلینیکی', 'عملی کارآموزی', 'عملی کارورزی', 'پایان نامه', 'رساله'];
-
-            variableTbody.innerHTML = '';
-            unitTypes.forEach(unitType => {
-                variableTbody.insertAdjacentHTML('beforeend', `<tr><td>${unitType}</td><td><input type="number" class="variable-unit-input" data-unit-type="${unitType}" min="0" placeholder="0"></td></tr>`);
+            formA.variableTbody.innerHTML = '';
+            unitTypes.forEach(type => {
+                formA.variableTbody.insertAdjacentHTML('beforeend', `<tr><td>${type}</td><td><input type="number" class="variable-unit-input-a" data-unit-type="${type}" min="0" placeholder="0"></td></tr>`);
             });
-
-            document.querySelectorAll('.variable-unit-input').forEach(input => {
-                input.addEventListener('input', performCalculation);
-            });
-
-            variableSection.style.display = 'block';
-            performCalculation(); // Perform initial calculation with 0 units
+            document.querySelectorAll('.variable-unit-input-a').forEach(input => input.addEventListener('input', calculateFormA));
+            formA.variableSection.style.display = 'block';
+            calculateFormA();
         });
 
-        // 5. Main function to send selections to the server and get the result
-        async function performCalculation() {
-            const degree = degreeSelect.value;
-            const fieldGroup = fieldGroupSelect.value;
-            const level = levelSelect.value;
-
-            if (!degree || !fieldGroup || !level) {
-                hideResults();
+        async function calculateFormA() {
+            const { degree, fieldGroup, level } = formA;
+            if (!degree.value || !fieldGroup.value || !level.value) {
+                hideFormAResults();
                 return;
             }
 
-            // Gather all unit counts from the input fields
             const units = {};
-            document.querySelectorAll('.variable-unit-input').forEach(input => {
-                const unitType = input.dataset.unitType;
+            document.querySelectorAll('.variable-unit-input-a').forEach(input => {
                 const count = parseInt(input.value) || 0;
-                // Only include unit types with a count greater than 0 in the request
-                if (count > 0) {
-                    units[unitType] = count;
-                }
+                if (count > 0) units[input.dataset.unitType] = count;
             });
 
-            try {
-                const response = await fetch('/api/calculate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ degree, fieldGroup, level, units }),
-                });
+            const response = await fetch('/api/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ degree: degree.value, fieldGroup: fieldGroup.value, level: level.value, units }),
+            });
 
-                if (!response.ok) throw new Error('Calculation request failed.');
-
+            if (response.ok) {
                 const results = await response.json();
-
-                // Update the UI with the results received from the server
-                resultBase.textContent = `شهریه ثابت: ${results.baseTuition}`;
-                resultVariable.textContent = `جمع شهریه متغیر: ${results.variableTuition}`;
-                resultTotal.textContent = `جمع کل شهریه: ${results.totalTuition}`;
-
-                resultBase.style.display = 'block';
-                resultVariable.style.display = 'block';
-                resultTotal.style.display = 'block';
-
-            } catch (error) {
-                console.error('Error performing calculation:', error);
-                resultTotal.textContent = 'خطا در برقراری ارتباط با سرور.';
-                resultTotal.style.display = 'block';
+                formA.resultBase.textContent = `شهریه ثابت: ${results.baseTuition}`;
+                formA.resultVariable.textContent = `جمع شهریه متغیر: ${results.variableTuition}`;
+                formA.resultTotal.textContent = `جمع کل شهریه: ${results.totalTuition}`;
+                formA.resultBase.style.display = 'block';
+                formA.resultVariable.style.display = 'block';
+                formA.resultTotal.style.display = 'block';
             }
         }
 
-        // Handle form switching
+        // --- Form B: Self-Governing ---
+        const formB = {
+            location: document.getElementById('location-select-b'),
+            degree: document.getElementById('degree-select-b'),
+            result: document.getElementById('result-b'),
+        };
+
+        async function initializeFormB() {
+            try {
+                // Assumes a new endpoint '/api/options/locations' exists in your server.js
+                const response = await fetch('/api/options/locations');
+                populateSelect(formB.location, await response.json());
+            } catch (e) { console.error("Form B Init Error:", e); }
+        }
+
+        formB.location.addEventListener('change', async () => {
+            resetSelect(formB.degree);
+            formB.result.style.display = 'none';
+            if (formB.location.value) {
+                // Assumes a new endpoint '/api/options/self-governing-degrees' exists
+                const response = await fetch(`/api/options/self-governing-degrees?location=${encodeURIComponent(formB.location.value)}`);
+                populateSelect(formB.degree, await response.json());
+            }
+        });
+
+        formB.degree.addEventListener('change', async () => {
+            const { location, degree, result } = formB;
+            if (location.value && degree.value) {
+                // Assumes a new endpoint '/api/calculate-self-governing' exists
+                const response = await fetch('/api/calculate-self-governing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ location: location.value, degree: degree.value }),
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    result.textContent = `مجموع شهریه سالیانه: ${data.totalTuition}`;
+                    result.style.display = 'block';
+                }
+            } else {
+                result.style.display = 'none';
+            }
+        });
+
+        // --- Form C: Currency ---
+        const formC = {
+            degree: document.getElementById('degree-select-c'),
+            fieldGroup: document.getElementById('field-group-select-c'),
+            level: document.getElementById('level-select-c'),
+            result: document.getElementById('result-c'),
+        };
+
+        async function initializeFormC() {
+            try {
+                // Assumes a new endpoint '/api/options/currency-degrees' exists
+                const response = await fetch('/api/options/currency-degrees');
+                populateSelect(formC.degree, await response.json());
+            } catch (e) { console.error("Form C Init Error:", e); }
+        }
+
+        formC.degree.addEventListener('change', async () => {
+            resetSelect(formC.fieldGroup);
+            resetSelect(formC.level);
+            formC.result.style.display = 'none';
+            if (formC.degree.value) {
+                // Assumes new endpoint '/api/options/currency-field-groups' exists
+                const response = await fetch(`/api/options/currency-field-groups?degree=${encodeURIComponent(formC.degree.value)}`);
+                populateSelect(formC.fieldGroup, await response.json());
+            }
+        });
+
+        formC.fieldGroup.addEventListener('change', async () => {
+            resetSelect(formC.level);
+            formC.result.style.display = 'none';
+            if (formC.degree.value && formC.fieldGroup.value) {
+                // Assumes new endpoint '/api/options/currency-levels' exists
+                const response = await fetch(`/api/options/currency-levels?degree=${encodeURIComponent(formC.degree.value)}&fieldGroup=${encodeURIComponent(formC.fieldGroup.value)}`);
+                populateSelect(formC.level, await response.json());
+            }
+        });
+
+        formC.level.addEventListener('change', async () => {
+            const { degree, fieldGroup, level, result } = formC;
+            if (degree.value && fieldGroup.value && level.value) {
+                // Assumes a new endpoint '/api/calculate-currency' exists
+                const response = await fetch('/api/calculate-currency', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ degree: degree.value, fieldGroup: fieldGroup.value, level: level.value }),
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    result.textContent = `شهریه سالیانه: ${data.totalTuition}`;
+                    result.style.display = 'block';
+                }
+            } else {
+                result.style.display = 'none';
+            }
+        });
+
+        // --- General Setup ---
         document.querySelectorAll('input[name="tuition-type"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
                 document.querySelectorAll('.form-section').forEach(form => form.classList.remove('active'));
@@ -305,8 +383,10 @@
             });
         });
 
-        // Initial load
-        initializeDegrees();
+        // Initialize all forms on page load
+        initializeFormA();
+        initializeFormB();
+        initializeFormC();
     });
 </script>
 </body>
