@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "data.js": {
+      "memory": 1024
+    }
+  },
+  "rewrites": [
+    { "source": "/api/data", "destination": "/data.js" }
+  ]
+}
