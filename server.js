@@ -4,16 +4,18 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import xlsx from 'xlsx';
 
-const app = express();
+// --- Server Setup ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const app = express();
+const PORT = process.env.PORT || 3000; // Universal port setup
 
 // --- Helper Functions ---
 function normalizeText(str) {
     if (typeof str !== 'string') return str;
     return str.trim().replace(/\s+/g, ' ').replace(/ي/g, 'ی').replace(/ك/g, 'ک');
 }
-
+// ... (All other helper functions like cleanHeaders, parseSheet, etc. remain the same)
 function cleanHeaders(headers) {
     return headers.map(h => {
         if (typeof h !== 'string') return h;
@@ -24,7 +26,6 @@ function cleanHeaders(headers) {
         return cleanH;
     });
 }
-
 function parseSheet(sheet) {
     const data = xlsx.utils.sheet_to_json(sheet, { header: 1 });
     if (data.length < 2) return {};
@@ -45,7 +46,6 @@ function parseSheet(sheet) {
     }
     return parsedData;
 }
-
 function parseCurrencySheet_3D(sheet) {
     const data = xlsx.utils.sheet_to_json(sheet, { header: 1 });
     if (data.length < 2) return {};
@@ -68,23 +68,16 @@ function parseCurrencySheet_3D(sheet) {
     }
     return result;
 }
-
 function parseSelfGoverningSheet(sheet) {
     const data = xlsx.utils.sheet_to_json(sheet);
-    const result = {
-        'تهران': {},
-        'خارج از تهران': {}
-    };
-
+    const result = { 'تهران': {}, 'خارج از تهران': {} };
     const headers = Object.keys(data[0] || {});
     const degreeHeader = headers[0];
     const tehranHeader = headers.find(h => h.includes('تهران'));
     const otherHeader = headers.find(h => h.includes('خارج از استان تهران'));
-
     data.forEach(row => {
         const degree = normalizeText(row[degreeHeader]);
         if (!degree) return;
-
         if (tehranHeader && row[tehranHeader] !== undefined) {
             result['تهران'][degree] = row[tehranHeader];
         }
@@ -95,28 +88,28 @@ function parseSelfGoverningSheet(sheet) {
     return result;
 }
 
-// --- Main API Route ---
+// --- Middleware & API ---
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.get('/api/data', (req, res) => {
     try {
-        const dataPath = __dirname;
+        const dataPath = path.join(__dirname, 'data');
         const allData = { base: {}, variable: {}, currency: {}, selfGoverning: {} };
         const fileExists = (fileName) => fs.existsSync(path.join(dataPath, fileName));
 
+        // The rest of the data reading logic is exactly the same
         if (fileExists('شهریه پایه.xlsx')) {
             const baseWb = xlsx.readFile(path.join(dataPath, 'شهریه پایه.xlsx'));
             allData.base = parseSheet(baseWb.Sheets[baseWb.SheetNames[0]]);
         }
-
         if (fileExists('شهریه ارزی.xlsx')) {
             const currencyWb = xlsx.readFile(path.join(dataPath, 'شهریه ارزی.xlsx'));
             allData.currency = parseCurrencySheet_3D(currencyWb.Sheets[currencyWb.SheetNames[0]]);
         }
-
         if (fileExists('شهریه خودگردان.xlsx')) {
             const selfWb = xlsx.readFile(path.join(dataPath, 'شهریه خودگردان.xlsx'));
             allData.selfGoverning = parseSelfGoverningSheet(selfWb.Sheets[selfWb.SheetNames[0]]);
         }
-
         const degreeFiles = {
             'کاردانی': 'شهریه  متغیر کاردانی .xlsx',
             'کارشناسی': 'شهریه متغیر کارشناسی.xlsx',
@@ -136,11 +129,14 @@ app.get('/api/data', (req, res) => {
         }
 
         res.status(200).json(allData);
+
     } catch (error) {
         console.error("Error reading Excel files:", error);
         res.status(500).json({ error: 'Failed to read or process Excel files.' });
     }
 });
 
-// Export the app for Vercel
-export default app;
+// --- Start the Server ---
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
