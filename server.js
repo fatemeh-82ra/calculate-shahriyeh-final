@@ -1,9 +1,7 @@
-// fileName: server.js
-
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-// Use 'with' for modern Node.js versions
+// Use 'with' syntax for modern Node.js versions
 import data from './data.json' with { type: 'json' };
 
 // --- Server Setup ---
@@ -24,11 +22,10 @@ const formatCurrency = (num) => {
     return new Intl.NumberFormat('fa-IR').format(finalNum);
 };
 
-// --- API Routes for Populating Dropdowns ---
+// --- API Routes for Form A (University) ---
 
 // Endpoint to get the initial list of degrees
 app.get('/api/options/degrees', (req, res) => {
-    // We send only the list of names (keys), not the entire data structure
     const degrees = Object.keys(data.variable || {});
     res.json(degrees);
 });
@@ -53,22 +50,14 @@ app.get('/api/options/levels', (req, res) => {
     res.json(levels);
 });
 
-
-// --- API Route for Secure Calculation ---
-
+// Main calculation endpoint for Form A
 app.post('/api/calculate', (req, res) => {
-    // 1. Get user selections from the request
     const { degree, fieldGroup, level, units } = req.body;
-
     if (!degree || !fieldGroup || !level) {
         return res.status(400).json({ error: 'Missing required selections.' });
     }
-
     try {
-        // 2. Calculate Base Tuition
         const baseAmount = parseFloat(String(data.base[fieldGroup]?.[level] || 0).replace(/,/g, ''));
-
-        // 3. Calculate Variable Tuition based on the units object
         let variableTotal = 0;
         if (units) {
             for (const unitType in units) {
@@ -79,25 +68,79 @@ app.post('/api/calculate', (req, res) => {
                 }
             }
         }
-
-        // 4. Calculate Total
         const total = baseAmount + variableTotal;
-
-        // 5. Send ONLY the final, formatted results back
         res.status(200).json({
             baseTuition: `${formatCurrency(baseAmount)} تومان`,
             variableTuition: `${formatCurrency(variableTotal)} تومان`,
             totalTuition: `${formatCurrency(total)} تومان`
         });
-
     } catch (error) {
         console.error("Calculation error:", error);
         res.status(500).json({ error: 'Failed to calculate tuition.' });
     }
 });
 
+// --- API Routes for Form B (Self-Governing) ---
+
+app.get('/api/options/locations', (req, res) => {
+    res.json(Object.keys(data.selfGoverning || {}));
+});
+
+app.get('/api/options/self-governing-degrees', (req, res) => {
+    const { location } = req.query;
+    if (!location || !data.selfGoverning[location]) {
+        return res.status(404).json([]);
+    }
+    res.json(Object.keys(data.selfGoverning[location]));
+});
+
+app.post('/api/calculate-self-governing', (req, res) => {
+    const { location, degree } = req.body;
+    if (!location || !degree) {
+        return res.status(400).json({ error: 'Missing selections.' });
+    }
+    const amount = data.selfGoverning[location]?.[degree] || 0;
+    res.json({
+        totalTuition: `${formatCurrency(amount)} تومان`
+    });
+});
+
+// --- API Routes for Form C (Currency) ---
+
+app.get('/api/options/currency-degrees', (req, res) => {
+    res.json(Object.keys(data.currency || {}));
+});
+
+app.get('/api/options/currency-field-groups', (req, res) => {
+    const { degree } = req.query;
+    if (!degree || !data.currency[degree]) {
+        return res.status(404).json([]);
+    }
+    res.json(Object.keys(data.currency[degree]));
+});
+
+app.get('/api/options/currency-levels', (req, res) => {
+    const { degree, fieldGroup } = req.query;
+    if (!degree || !fieldGroup || !data.currency[degree]?.[fieldGroup]) {
+        return res.status(404).json([]);
+    }
+    res.json(Object.keys(data.currency[degree][fieldGroup]));
+});
+
+app.post('/api/calculate-currency', (req, res) => {
+    const { degree, fieldGroup, level } = req.body;
+    if (!degree || !fieldGroup || !level) {
+        return res.status(400).json({ error: 'Missing selections.' });
+    }
+    const amount = data.currency[degree]?.[fieldGroup]?.[level] || 0;
+    const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
+    res.json({
+        totalTuition: formattedAmount
+    });
+});
 
 // --- Frontend Route ---
+// This should be the LAST route so it doesn't override API routes
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -107,4 +150,5 @@ app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
 
+// Export the app for serverless environments like Vercel
 export default app;
