@@ -5,24 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محاسبه شهریه تقریبی دانشجویان</title>
     <style>
-        /* Your CSS styles remain the same */
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Tahoma', sans-serif; background-color: #f4f7f9; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .form-container { width: 100%; max-width: 700px; background: #fff; padding: 25px 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,.1); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; }
-        .radio-group { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; border-bottom: 1px solid #e0e0e0; padding-bottom: 20px; }
-        .radio-group label { cursor: pointer; padding: 10px 15px; border-radius: 5px; transition: all .3s ease; }
-        .radio-group input[type="radio"] { display: none; }
-        .radio-group input[type="radio"]:checked+label { background-color: #3498db; color: #fff; font-weight: 700; }
-        .form-section { display: none; }
-        .form-section.active { display: block; }
-        .form-row { margin-bottom: 15px; }
-        .form-row label { display: block; margin-bottom: 5px; font-weight: 500; }
-        select, input[type=number] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
-        select:disabled { background-color: #f2f2f2; cursor: not-allowed; }
-        .result-box { margin-top: 20px; padding: 15px; background-color: #eaf6ff; border: 1px solid #bce0fd; border-radius: 5px; font-weight: 700; text-align: center; font-size: 1.1em; }
-        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: center; border: 1px solid #ddd; }
-        th { background-color: #f2f2f2; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Tahoma', sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding-bottom: 40vh; /* This guarantees space for the dropdown to open */
+        }
+        .form-container {
+            width: 100%;
+            max-width: 700px;
+            background: #fff;
+            padding: 25px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,.1);
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+        }
+        .radio-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 20px;
+        }
+        .radio-group label {
+            cursor: pointer;
+            padding: 10px 15px;
+            border-radius: 5px;
+            transition: all .3s ease;
+        }
+        .radio-group input[type="radio"] {
+            display: none;
+        }
+        .radio-group input[type="radio"]:checked+label {
+            background-color: #3498db;
+            color: #fff;
+            font-weight: 700;
+        }
+        .form-section {
+            display: none;
+        }
+        .form-section.active {
+            display: block;
+        }
+        .form-row {
+            margin-bottom: 15px;
+        }
+        .form-row label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        select, input[type=number] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        select:disabled {
+            background-color: #f2f2f2;
+            cursor: not-allowed;
+        }
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #eaf6ff;
+            border: 1px solid #bce0fd;
+            border-radius: 5px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
     </style>
 </head>
 <body>
@@ -51,173 +132,147 @@
             <label for="level-select-a">سطح واحد:</label>
             <select id="level-select-a" disabled></select>
         </div>
+        <div id="result-base-a" class="result-box" style="display: none;"></div>
         <div id="variable-tuition-section-a" style="display: none;">
             <h4>شهریه متغیر (تعداد واحدها را وارد کنید)</h4>
             <table><tbody id="variable-units-tbody-a"></tbody></table>
+            <div id="result-variable-a" class="result-box" style="display: none;"></div>
         </div>
-        <div id="result-base-a" class="result-box" style="display: none;"></div>
-        <div id="result-variable-a" class="result-box" style="display: none;"></div>
+        <div id="nursing-notice-a" class="result-box" style="display: none;"></div>
         <div id="result-total-a" class="result-box" style="display: none;"></div>
     </div>
 
     <div id="form-b" class="form-section">
         <h3>شهریه واحدهای خودگردان</h3>
-        <p>این بخش برای نمایش نیاز به پیاده‌سازی مشابه بخش اول دارد.</p>
+        <div class="form-row">
+            <label for="location-select-b">محل واحد:</label>
+            <select id="location-select-b"></select>
+        </div>
+        <div class="form-row">
+            <label for="degree-select-b">مقطع تحصیلی:</label>
+            <select id="degree-select-b" disabled></select>
+        </div>
+        <div id="result-b" class="result-box" style="display: none;"></div>
     </div>
 
     <div id="form-c" class="form-section">
         <h3>شهریه ارزی</h3>
-        <p>این بخش برای نمایش نیاز به پیاده‌سازی مشابه بخش اول دارد.</p>
+        <div class="form-row">
+            <label for="degree-select-c">مقطع تحصیلی:</label>
+            <select id="degree-select-c"></select>
+        </div>
+        <div class="form-row">
+            <label for="field-group-select-c">گروه / رشته تحصیلی:</label>
+            <select id="field-group-select-c" disabled></select>
+        </div>
+        <div class="form-row">
+            <label for="level-select-c">سطح واحد:</label>
+            <select id="level-select-c" disabled></select>
+        </div>
+        <div id="result-c" class="result-box" style="display: none;"></div>
     </div>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- Form A Elements ---
-        const degreeSelect = document.getElementById('degree-select-a');
-        const fieldGroupSelect = document.getElementById('field-group-select-a');
-        const levelSelect = document.getElementById('level-select-a');
-        const variableTbody = document.getElementById('variable-units-tbody-a');
-        const variableSection = document.getElementById('variable-tuition-section-a');
-        const resultBase = document.getElementById('result-base-a');
-        const resultVariable = document.getElementById('result-variable-a');
-        const resultTotal = document.getElementById('result-total-a');
+    document.addEventListener('DOMContentLoaded', async () => {
+        let allData = {};
 
-        // --- Helper Functions ---
-        const populateSelect = (selectEl, options, prompt = "انتخاب کنید...") => {
-            selectEl.innerHTML = `<option value="">${prompt}</option>`;
-            options.forEach(opt => selectEl.insertAdjacentHTML('beforeend', `<option value="${opt}">${opt}</option>`));
-            selectEl.disabled = false;
+        const formA = { degree: document.getElementById('degree-select-a'), fieldGroup: document.getElementById('field-group-select-a'), level: document.getElementById('level-select-a') };
+        const formB = { location: document.getElementById('location-select-b'), degree: document.getElementById('degree-select-b'), result: document.getElementById('result-b') };
+        const formC = { degree: document.getElementById('degree-select-c'), fieldGroup: document.getElementById('field-group-select-c'), level: document.getElementById('level-select-c'), result: document.getElementById('result-c') };
+
+        // Function to dynamically adjust select width based on longest option
+        function adjustSelectWidth(selectElement) {
+            // Create a temporary element to measure text width
+            const temp = document.createElement('span');
+            temp.style.visibility = 'hidden';
+            temp.style.position = 'absolute';
+            temp.style.whiteSpace = 'nowrap';
+            temp.style.fontSize = window.getComputedStyle(selectElement).fontSize;
+            temp.style.fontFamily = window.getComputedStyle(selectElement).fontFamily;
+            document.body.appendChild(temp);
+
+            let maxWidth = 0;
+            Array.from(selectElement.options).forEach(option => {
+                temp.textContent = option.textContent;
+                const width = temp.offsetWidth;
+                if (width > maxWidth) maxWidth = width;
+            });
+
+            // Add padding (e.g., 30px for dropdown arrow and padding)
+            maxWidth += 30;
+
+            // Store original width
+            const originalWidth = selectElement.style.width || '100%';
+
+            // Adjust width and styles on focus
+            selectElement.addEventListener('focus', () => {
+                selectElement.style.width = `${maxWidth}px`;
+                selectElement.style.whiteSpace = 'normal';
+                selectElement.style.overflow = 'visible';
+                selectElement.style.textOverflow = 'clip';
+            });
+
+            // Restore original width and styles on blur
+            selectElement.addEventListener('blur', () => {
+                selectElement.style.width = originalWidth;
+                selectElement.style.whiteSpace = 'nowrap';
+                selectElement.style.overflow = 'hidden';
+                selectElement.style.textOverflow = 'ellipsis';
+            });
+
+            document.body.removeChild(temp);
+        }
+
+        // Apply to field group selects and re-run on change
+        [formA.fieldGroup, formC.fieldGroup].forEach(select => {
+            adjustSelectWidth(select);
+            select.addEventListener('change', () => adjustSelectWidth(select));
+        });
+
+        const populateSelect = (el, opts) => {
+            el.innerHTML = '<option value="">انتخاب کنید...</option>';
+            opts.forEach(opt => el.insertAdjacentHTML('beforeend', `<option value="${opt}">${opt}</option>`));
+            el.disabled = false;
+            // Re-apply width adjustment after populating options
+            if (el === formA.fieldGroup || el === formC.fieldGroup) {
+                adjustSelectWidth(el);
+            }
+        };
+        const resetSelect = (el) => {
+            el.innerHTML = '<option value="">انتخاب کنید...</option>';
+            el.disabled = true;
+            // Re-apply width adjustment after resetting
+            if (el === formA.fieldGroup || el === formC.fieldGroup) {
+                adjustSelectWidth(el);
+            }
+        };
+        const formatCurrency = (numStr, currency = 'تومان') => {
+            const num = parseFloat(String(numStr).replace(/,/g, ''));
+            if (isNaN(num) || num === null) return 'نامشخص';
+            if (currency === 'تومان') {
+                const finalNum = num * 1000;
+                return `${new Intl.NumberFormat('fa-IR').format(finalNum)} تومان`;
+            }
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(num);
         };
 
-        const resetSelect = (selectEl) => {
-            selectEl.innerHTML = '<option value="">...</option>';
-            selectEl.disabled = true;
-        };
-
-        const hideResults = () => {
-            variableSection.style.display = 'none';
-            resultBase.style.display = 'none';
-            resultVariable.style.display = 'none';
-            resultTotal.style.display = 'none';
-            variableTbody.innerHTML = '';
-        };
-
-        // --- Data Fetching and UI Logic ---
-
-        // 1. Initialize the first dropdown on page load
-        async function initializeDegrees() {
+        async function initialize() {
             try {
-                const response = await fetch('/api/options/degrees');
+                const response = await fetch('/api/data');
                 if (!response.ok) throw new Error('Network response was not ok');
-                const degrees = await response.json();
-                populateSelect(degreeSelect, degrees);
+                allData = await response.json();
+                console.log("Data loaded:", allData);
+
+                populateSelect(formA.degree, Object.keys(allData.variable));
+                populateSelect(formB.location, Object.keys(allData.selfGoverning));
+                populateSelect(formC.degree, Object.keys(allData.currency));
             } catch (error) {
-                console.error('Failed to load degrees:', error);
+                console.error('Failed to fetch data:', error);
+                alert('خطا در بارگذاری اطلاعات از سرور.');
             }
         }
 
-        // 2. When a degree is selected, fetch its field groups
-        degreeSelect.addEventListener('change', async () => {
-            resetSelect(fieldGroupSelect);
-            resetSelect(levelSelect);
-            hideResults();
-            const selectedDegree = degreeSelect.value;
-            if (selectedDegree) {
-                try {
-                    const response = await fetch(`/api/options/field-groups?degree=${encodeURIComponent(selectedDegree)}`);
-                    const fieldGroups = await response.json();
-                    populateSelect(fieldGroupSelect, fieldGroups);
-                } catch (error) {
-                    console.error('Failed to load field groups:', error);
-                }
-            }
-        });
-
-        // 3. When a field group is selected, fetch its levels
-        fieldGroupSelect.addEventListener('change', async () => {
-            resetSelect(levelSelect);
-            hideResults();
-            const selectedFieldGroup = fieldGroupSelect.value;
-            if (selectedFieldGroup) {
-                try {
-                    const response = await fetch(`/api/options/levels?fieldGroup=${encodeURIComponent(selectedFieldGroup)}`);
-                    const levels = await response.json();
-                    populateSelect(levelSelect, levels);
-                } catch (error) {
-                    console.error('Failed to load levels:', error);
-                }
-            }
-        });
-
-        // 4. When level is selected, show unit inputs and trigger calculation
-        levelSelect.addEventListener('change', () => {
-            // For simplicity, we hardcode the unit types.
-            const unitTypes = ['نظری', 'عملی عمومی', 'عملی پایه', 'عملی اصلی', 'عملی تخصصی', 'عملی کلینیکی', 'عملی کارآموزی', 'عملی کارورزی', 'پایان نامه', 'رساله'];
-
-            variableTbody.innerHTML = '';
-            unitTypes.forEach(unitType => {
-                variableTbody.insertAdjacentHTML('beforeend', `<tr><td>${unitType}</td><td><input type="number" class="variable-unit-input" data-unit-type="${unitType}" min="0" placeholder="0"></td></tr>`);
-            });
-
-            document.querySelectorAll('.variable-unit-input').forEach(input => {
-                input.addEventListener('input', performCalculation);
-            });
-
-            variableSection.style.display = 'block';
-            performCalculation(); // Perform initial calculation with 0 units
-        });
-
-        // 5. Main function to send selections to the server and get the result
-        async function performCalculation() {
-            const degree = degreeSelect.value;
-            const fieldGroup = fieldGroupSelect.value;
-            const level = levelSelect.value;
-
-            if (!degree || !fieldGroup || !level) {
-                hideResults();
-                return;
-            }
-
-            // Gather all unit counts from the input fields
-            const units = {};
-            document.querySelectorAll('.variable-unit-input').forEach(input => {
-                const unitType = input.dataset.unitType;
-                const count = parseInt(input.value) || 0;
-                // Only include unit types with a count greater than 0
-                if (count > 0) {
-                    units[unitType] = count;
-                }
-            });
-
-            try {
-                const response = await fetch('/api/calculate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ degree, fieldGroup, level, units }),
-                });
-
-                if (!response.ok) throw new Error('Calculation request failed.');
-
-                const results = await response.json();
-
-                // Update the UI with the results from the server
-                resultBase.textContent = `شهریه ثابت: ${results.baseTuition}`;
-                resultVariable.textContent = `جمع شهریه متغیر: ${results.variableTuition}`;
-                resultTotal.textContent = `جمع کل شهریه: ${results.totalTuition}`;
-
-                resultBase.style.display = 'block';
-                resultVariable.style.display = 'block';
-                resultTotal.style.display = 'block';
-
-            } catch (error) {
-                console.error('Error performing calculation:', error);
-                resultTotal.textContent = 'خطا در برقراری ارتباط با سرور.';
-                resultTotal.style.display = 'block';
-            }
-        }
-
-        // Handle form switching
         document.querySelectorAll('input[name="tuition-type"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
                 document.querySelectorAll('.form-section').forEach(form => form.classList.remove('active'));
@@ -225,8 +280,111 @@
             });
         });
 
-        // Initial load
-        initializeDegrees();
+        formA.degree.addEventListener('change', () => {
+            resetSelect(formA.fieldGroup); resetSelect(formA.level);
+            const selectedDegree = formA.degree.value;
+            if (selectedDegree && allData.variable[selectedDegree] && allData.variable[selectedDegree]['نظری']) {
+                populateSelect(formA.fieldGroup, Object.keys(allData.variable[selectedDegree]['نظری']));
+            }
+        });
+        formA.fieldGroup.addEventListener('change', () => {
+            resetSelect(formA.level);
+            const selectedFieldGroup = formA.fieldGroup.value;
+            if (selectedFieldGroup && allData.base[selectedFieldGroup]) {
+                populateSelect(formA.level, Object.keys(allData.base[selectedFieldGroup]));
+            }
+        });
+        formA.level.addEventListener('change', calculateFormA);
+
+        formB.location.addEventListener('change', () => {
+            resetSelect(formB.degree); formB.result.style.display = 'none';
+            const selectedLocation = formB.location.value;
+            if (selectedLocation) {
+                populateSelect(formB.degree, Object.keys(allData.selfGoverning[selectedLocation]));
+            }
+        });
+        formB.degree.addEventListener('change', () => {
+            const location = formB.location.value, degree = formB.degree.value;
+            if (location && degree) {
+                const amount = allData.selfGoverning[location][degree];
+                formB.result.textContent = `مجموع شهریه سالیانه: ${formatCurrency(amount, 'تومان')}`;
+                formB.result.style.display = 'block';
+            } else {
+                formB.result.style.display = 'none';
+            }
+        });
+
+        formC.degree.addEventListener('change', () => {
+            resetSelect(formC.fieldGroup); resetSelect(formC.level); formC.result.style.display = 'none';
+            const selectedDegree = formC.degree.value;
+            if (selectedDegree && allData.currency[selectedDegree]) {
+                populateSelect(formC.fieldGroup, Object.keys(allData.currency[selectedDegree]));
+            }
+        });
+        formC.fieldGroup.addEventListener('change', () => {
+            resetSelect(formC.level); formC.result.style.display = 'none';
+            const selectedDegree = formC.degree.value;
+            const selectedFieldGroup = formC.fieldGroup.value;
+            if (selectedDegree && selectedFieldGroup && allData.currency[selectedDegree][selectedFieldGroup]) {
+                populateSelect(formC.level, Object.keys(allData.currency[selectedDegree][selectedFieldGroup]));
+            }
+        });
+        formC.level.addEventListener('change', () => {
+            const degree = formC.degree.value, fieldGroup = formC.fieldGroup.value, level = formC.level.value;
+            if (degree && fieldGroup && level) {
+                const amount = allData.currency[degree][fieldGroup][level];
+                formC.result.textContent = `شهریه سالیانه: ${formatCurrency(amount, 'USD')}`;
+                formC.result.style.display = 'block';
+            } else {
+                formC.result.style.display = 'none';
+            }
+        });
+
+        function calculateFormA() {
+            ['result-base-a', 'result-variable-a', 'result-total-a', 'nursing-notice-a', 'variable-tuition-section-a'].forEach(id => document.getElementById(id).style.display = 'none');
+            const degree = formA.degree.value, fieldGroup = formA.fieldGroup.value, level = formA.level.value;
+            if (!degree || !fieldGroup || !level) return;
+            const baseAmount = allData.base[fieldGroup]?.[level];
+            document.getElementById('result-base-a').textContent = `شهریه ثابت: ${formatCurrency(baseAmount, 'تومان')}`;
+            document.getElementById('result-base-a').style.display = 'block';
+            if (fieldGroup.includes('پرستاری')) {
+                document.getElementById('nursing-notice-a').textContent = 'شهریه متغیر رشته پرستاری بصورت سالیانه محاسبه میشود.';
+                document.getElementById('nursing-notice-a').style.display = 'block';
+                return;
+            }
+            const tbody = document.getElementById('variable-units-tbody-a');
+            tbody.innerHTML = '';
+            const unitTypes = allData.variable[degree];
+            if (unitTypes) {
+                Object.keys(unitTypes).forEach(unitType => {
+                    const cost = unitTypes[unitType]?.[fieldGroup]?.[level];
+                    if (cost !== undefined) {
+                        tbody.insertAdjacentHTML('beforeend', `<tr><td>${unitType}</td><td><input type="number" class="variable-unit-input-a" data-unit-type="${unitType}" min="0" value="0"></td></tr>`);
+                    }
+                });
+            }
+            document.getElementById('variable-tuition-section-a').style.display = 'block';
+            document.querySelectorAll('.variable-unit-input-a').forEach(input => input.addEventListener('input', calculateFormATotals));
+            calculateFormATotals();
+        }
+        function calculateFormATotals() {
+            const degree = formA.degree.value, fieldGroup = formA.fieldGroup.value, level = formA.level.value;
+            let variableTotal = 0;
+            document.querySelectorAll('.variable-unit-input-a').forEach(input => {
+                const count = parseInt(input.value) || 0;
+                const unitType = input.dataset.unitType;
+                const costPerUnit = allData.variable[degree]?.[unitType]?.[fieldGroup]?.[level] || 0;
+                variableTotal += count * parseFloat(String(costPerUnit).replace(/,/g, ''));
+            });
+            document.getElementById('result-variable-a').textContent = `جمع شهریه متغیر: ${formatCurrency(variableTotal, 'تومان')}`;
+            document.getElementById('result-variable-a').style.display = 'block';
+            const baseAmount = allData.base[fieldGroup]?.[level] || 0;
+            const total = parseFloat(String(baseAmount).replace(/,/g, '')) + variableTotal;
+            document.getElementById('result-total-a').textContent = `جمع کل شهریه: ${formatCurrency(total, 'تومان')}`;
+            document.getElementById('result-total-a').style.display = 'block';
+        }
+
+        initialize();
     });
 </script>
 </body>
