@@ -4,7 +4,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 // Import the pre-built JSON data
-import data from './data.json' assert { type: 'json' };
+import data from './data.json' with { type: 'json' };
 
 // --- Server Setup ---
 const __filename = fileURLToPath(import.meta.url);
