@@ -8,14 +8,13 @@ import xlsx from 'xlsx';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
-const PORT = process.env.PORT || 3000; // Universal port setup
+const PORT = process.env.PORT || 3000;
 
 // --- Helper Functions ---
 function normalizeText(str) {
     if (typeof str !== 'string') return str;
     return str.trim().replace(/\s+/g, ' ').replace(/ي/g, 'ی').replace(/ك/g, 'ک');
 }
-// ... (All other helper functions like cleanHeaders, parseSheet, etc. remain the same)
 function cleanHeaders(headers) {
     return headers.map(h => {
         if (typeof h !== 'string') return h;
@@ -97,7 +96,6 @@ app.get('/api/data', (req, res) => {
         const allData = { base: {}, variable: {}, currency: {}, selfGoverning: {} };
         const fileExists = (fileName) => fs.existsSync(path.join(dataPath, fileName));
 
-        // The rest of the data reading logic is exactly the same
         if (fileExists('شهریه پایه.xlsx')) {
             const baseWb = xlsx.readFile(path.join(dataPath, 'شهریه پایه.xlsx'));
             allData.base = parseSheet(baseWb.Sheets[baseWb.SheetNames[0]]);
@@ -129,7 +127,6 @@ app.get('/api/data', (req, res) => {
         }
 
         res.status(200).json(allData);
-
     } catch (error) {
         console.error("Error reading Excel files:", error);
         res.status(500).json({ error: 'Failed to read or process Excel files.' });
