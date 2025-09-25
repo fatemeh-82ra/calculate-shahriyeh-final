@@ -19,7 +19,7 @@
         }
         .form-container {
             width: 100%;
-            max-width: 700px;
+            max-width: 100%;
             background: #fff;
             padding: 25px 30px;
             border-radius: 10px;
@@ -81,16 +81,64 @@
             background-color: #f2f2f2;
             cursor: not-allowed;
         }
-        .result-box {
+        .result-box-a {
             margin-top: 20px;
             padding: 15px;
-            background-color: #eaf6ff;
-            border: 1px solid #bce0fd;
-            border-radius: 5px;
+            background-color: #e0eaf3;
+            border: 1px solid #fff;
+            text-align: center;
+            font-size: 1em;
+        }
+                .result-box-b {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5eeff;
+            border: 1px solid #fff;
+            text-align: center;
+            font-size: 1em;
+        }
+                .result-box-c {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #cffbde;
+            border: 1px solid #fff;
             font-weight: 700;
             text-align: center;
             font-size: 1.1em;
-        }
+            color:#fff;
+  width: 300px;
+  background-color: #eaab00; /* gold */
+  /* Single pixel data uri image http://jsfiddle.net/LPxrT/ 
+  /* background-image: gold, gold, white */
+  background-image: url('data:image/gif;base64,R0lGODlhAQABAPAAAOqrAP///yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=='),  url('data:image/gif;base64,R0lGODlhAQABAPAAAOqrAP///yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=='),
+url('data:image/gif;base64,R0lGODlhAQABAPAAAP///////yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==');
+  background-repeat: no-repeat;
+  background-size: 0 2px, 0 100%, 0% 2px;
+  background-position: top center, top center, bottom center;
+  -webkit-animation: drawBorderFromCenter 4s;
+}
+
+/* Chrome, Safari, Opera */
+@-webkit-keyframes drawBorderFromCenter {
+    0% {
+      background-size: 0 2px, 0 0, 100% 100%;
+    }
+    20% {
+      background-size: 100% 2px, 100% 0, 100% 100%;
+    }
+    66%
+    {
+      background-size: 100% 2px, 100% 98%, 100% 100%;
+    }
+    99%
+    {
+      background-size: 100% 2px, 100% 98%, 0 2px;
+    }
+}
+
+
+
+        
         table {
             width: 100%;
             margin-top: 20px;
@@ -104,11 +152,15 @@
         th {
             background-color: #f2f2f2;
         }
+        .container {
+  display: inline-flex;
+}
     </style>
 </head>
 <body>
 <div class="form-container">
     <h2>محاسبه شهریه تقریبی دانشجویان</h2>
+
     <div class="radio-group">
         <input type="radio" id="type-uni" name="tuition-type" value="form-a" checked>
         <label for="type-uni">شهریه واحدهای دانشگاهی</label>
@@ -120,6 +172,11 @@
 
     <div id="form-a" class="form-section active">
         <h3>شهریه واحدهای دانشگاهی</h3>
+<div class="container">
+        <div id="result-base-a" class="result-box-a" style="display: none;"></div>
+        <div id="result-variable-a" class="result-box-b" style="display: none;"></div>
+        <div id="result-total-a" class="result-box-c" style="display: none;"></div>
+        </div>
         <div class="form-row">
             <label for="degree-select-a">مقطع تحصیلی:</label>
             <select id="degree-select-a"></select>
@@ -136,9 +193,7 @@
             <h4>شهریه متغیر (تعداد واحدها را وارد کنید)</h4>
             <table><tbody id="variable-units-tbody-a"></tbody></table>
         </div>
-        <div id="result-base-a" class="result-box" style="display: none;"></div>
-        <div id="result-variable-a" class="result-box" style="display: none;"></div>
-        <div id="result-total-a" class="result-box" style="display: none;"></div>
+
     </div>
 
     <div id="form-b" class="form-section">
@@ -188,9 +243,7 @@
             selectEl.disabled = true;
         };
 
-        // NEW: Function to adjust select width dynamically
         function adjustSelectWidth(selectElement) {
-            // Create a temporary, hidden element to measure text width
             const temp = document.createElement('span');
             temp.style.visibility = 'hidden';
             temp.style.position = 'absolute';
@@ -208,16 +261,11 @@
             });
 
             document.body.removeChild(temp);
-
-            // Add some padding for the dropdown arrow icon
             const finalWidth = maxWidth + 40;
-
-            // Widen the select box on focus
             selectElement.addEventListener('focus', () => {
                 selectElement.style.width = `${finalWidth}px`;
             });
 
-            // Return it to normal size on blur
             selectElement.addEventListener('blur', () => {
                 selectElement.style.width = '100%';
             });
@@ -245,7 +293,7 @@
 
         async function initializeFormA() {
             try {
-                const response = await fetch('/api/options/degrees');
+                const response = await fetch('calculate.php?action=options&type=degrees');
                 populateSelect(formA.degree, await response.json());
             } catch (e) { console.error("Form A Init Error:", e); }
         }
@@ -255,9 +303,9 @@
             resetSelect(formA.level);
             hideFormAResults();
             if (formA.degree.value) {
-                const response = await fetch(`/api/options/field-groups?degree=${encodeURIComponent(formA.degree.value)}`);
+                const response = await fetch(`calculate.php?action=options&type=field-groups&degree=${encodeURIComponent(formA.degree.value)}`);
                 populateSelect(formA.fieldGroup, await response.json());
-                adjustSelectWidth(formA.fieldGroup); // NEW: Apply the width adjustment
+                adjustSelectWidth(formA.fieldGroup);
             }
         });
 
@@ -265,7 +313,7 @@
             resetSelect(formA.level);
             hideFormAResults();
             if (formA.fieldGroup.value) {
-                const response = await fetch(`/api/options/levels?fieldGroup=${encodeURIComponent(formA.fieldGroup.value)}`);
+                const response = await fetch(`calculate.php?action=options&type=levels&fieldGroup=${encodeURIComponent(formA.fieldGroup.value)}`);
                 populateSelect(formA.level, await response.json());
             }
         });
@@ -294,7 +342,7 @@
                 if (count > 0) units[input.dataset.unitType] = count;
             });
 
-            const response = await fetch('/api/calculate', {
+            const response = await fetch('calculate.php?action=calculate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ degree: degree.value, fieldGroup: fieldGroup.value, level: level.value, units }),
@@ -320,7 +368,7 @@
 
         async function initializeFormB() {
             try {
-                const response = await fetch('/api/options/locations');
+                const response = await fetch('calculate.php?action=options&type=locations');
                 populateSelect(formB.location, await response.json());
             } catch (e) { console.error("Form B Init Error:", e); }
         }
@@ -329,7 +377,7 @@
             resetSelect(formB.degree);
             formB.result.style.display = 'none';
             if (formB.location.value) {
-                const response = await fetch(`/api/options/self-governing-degrees?location=${encodeURIComponent(formB.location.value)}`);
+                const response = await fetch(`calculate.php?action=options&type=self-governing-degrees&location=${encodeURIComponent(formB.location.value)}`);
                 populateSelect(formB.degree, await response.json());
             }
         });
@@ -337,7 +385,7 @@
         formB.degree.addEventListener('change', async () => {
             const { location, degree, result } = formB;
             if (location.value && degree.value) {
-                const response = await fetch('/api/calculate-self-governing', {
+                const response = await fetch('calculate.php?action=calculate-self-governing', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ location: location.value, degree: degree.value }),
@@ -362,7 +410,7 @@
 
         async function initializeFormC() {
             try {
-                const response = await fetch('/api/options/currency-degrees');
+                const response = await fetch('calculate.php?action=options&type=currency-degrees');
                 populateSelect(formC.degree, await response.json());
             } catch (e) { console.error("Form C Init Error:", e); }
         }
@@ -372,9 +420,9 @@
             resetSelect(formC.level);
             formC.result.style.display = 'none';
             if (formC.degree.value) {
-                const response = await fetch(`/api/options/currency-field-groups?degree=${encodeURIComponent(formC.degree.value)}`);
+                const response = await fetch(`calculate.php?action=options&type=currency-field-groups&degree=${encodeURIComponent(formC.degree.value)}`);
                 populateSelect(formC.fieldGroup, await response.json());
-                adjustSelectWidth(formC.fieldGroup); // NEW: Apply the width adjustment
+                adjustSelectWidth(formC.fieldGroup);
             }
         });
 
@@ -382,7 +430,7 @@
             resetSelect(formC.level);
             formC.result.style.display = 'none';
             if (formC.degree.value && formC.fieldGroup.value) {
-                const response = await fetch(`/api/options/currency-levels?degree=${encodeURIComponent(formC.degree.value)}&fieldGroup=${encodeURIComponent(formC.fieldGroup.value)}`);
+                const response = await fetch(`calculate.php?action=options&type=currency-levels&degree=${encodeURIComponent(formC.degree.value)}&fieldGroup=${encodeURIComponent(formC.fieldGroup.value)}`);
                 populateSelect(formC.level, await response.json());
             }
         });
@@ -390,7 +438,7 @@
         formC.level.addEventListener('change', async () => {
             const { degree, fieldGroup, level, result } = formC;
             if (degree.value && fieldGroup.value && level.value) {
-                const response = await fetch('/api/calculate-currency', {
+                const response = await fetch('calculate.php?action=calculate-currency', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ degree: degree.value, fieldGroup: fieldGroup.value, level: level.value }),

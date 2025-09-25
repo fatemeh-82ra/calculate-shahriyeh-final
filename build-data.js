@@ -10,21 +10,23 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 console.log('🚀 Starting data build process...');
 
-// --- Helper Functions (Copied from your original server.js) ---
+// --- Helper Functions ---
 function normalizeText(str) {
     if (typeof str !== 'string') return str;
     return str.trim().replace(/\s+/g, ' ').replace(/ي/g, 'ی').replace(/ك/g, 'ک');
 }
+
+// MODIFIED FUNCTION: This function is now more robust and prevents repetition.
 function cleanHeaders(headers) {
     return headers.map(h => {
         if (typeof h !== 'string') return h;
-        let cleanH = h.trim();
-        if (/^\d/.test(cleanH)) {
-            cleanH = `سطح ${cleanH.replace(' سطح', '').trim()}`;
-        }
-        return cleanH;
+        // 1. Remove any existing "سطح" word and extra spaces to get only the number.
+        const justTheNumber = h.replace(/سطح/g, '').trim();
+        // 2. Always prepend "سطح" to the clean number.
+        return `سطح ${justTheNumber}`;
     });
 }
+
 function parseSheet(sheet) {
     const data = xlsx.utils.sheet_to_json(sheet, { header: 1 });
     if (data.length < 2) return {};
@@ -89,12 +91,11 @@ function parseSelfGoverningSheet(sheet) {
 
 // --- Main Build Logic ---
 try {
-    const dataPath = path.join(__dirname, 'data'); // Assume Excel files are in a 'data' folder
+    const dataPath = path.join(__dirname, 'data');
     const outputPath = path.join(__dirname, 'data.json');
     const allData = { base: {}, variable: {}, currency: {}, selfGoverning: {} };
     const fileExists = (fileName) => fs.existsSync(path.join(dataPath, fileName));
 
-    // --- All file reading and parsing logic from your original API handler ---
     if (fileExists('شهریه پایه.xlsx')) {
         const baseWb = xlsx.readFile(path.join(dataPath, 'شهریه پایه.xlsx'));
         allData.base = parseSheet(baseWb.Sheets[baseWb.SheetNames[0]]);
@@ -107,12 +108,16 @@ try {
         const selfWb = xlsx.readFile(path.join(dataPath, 'شهریه خودگردان.xlsx'));
         allData.selfGoverning = parseSelfGoverningSheet(selfWb.Sheets[selfWb.SheetNames[0]]);
     }
+
     const degreeFiles = {
-        'کاردانی': 'شهریه  متغیر کاردانی .xlsx',
-        'کارشناسی': 'شهریه متغیر کارشناسی.xlsx',
+        'کاردانی پیوسته': 'شهریه  متغیر کاردانی .xlsx',
+        'کاردانی ناپیوسته': 'شهریه  متغیر کاردانی .xlsx',
+        'کارشناسی پیوسته': 'شهریه متغیر کارشناسی.xlsx',
+        'کارشناسی ناپیوسته': 'شهریه متغیر کارشناسی.xlsx',
         'کارشناسی ارشد': 'شهریه متغیر کارشناسی ارشد.xlsx',
         'دکتری تخصصی': 'شهریه متغیر دکتری تخصصی.xlsx'
     };
+
     for (const [degreeName, fileName] of Object.entries(degreeFiles)) {
         const filePath = path.join(dataPath, fileName);
         if (fs.existsSync(filePath)) {
@@ -125,11 +130,10 @@ try {
         }
     }
 
-    // --- Write the final object to a JSON file ---
     fs.writeFileSync(outputPath, JSON.stringify(allData, null, 2));
-    console.log(`Data successfully built and saved to ${outputPath}`);
+    console.log(`✅ Data successfully built and saved to ${outputPath}`);
 
 } catch (error) {
-    console.error('Error during data build process:', error);
-    process.exit(1); // Exit with an error code
+    console.error('❌ Error during data build process:', error);
+    process.exit(1);
 }
